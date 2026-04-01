@@ -10,53 +10,66 @@ export default class MainMenuScene extends Phaser.Scene {
   }
 
   create() {
+    const panelWidth = 430;
+    const panelHeight = 258;
+    const panelX = GAME_WIDTH / 2;
+    const panelY = GAME_HEIGHT / 2 + 40;
+    const panelTop = panelY - (panelHeight / 2);
+    const panelBottom = panelY + (panelHeight / 2);
+
     this.createBackground();
 
-    this.add.text(GAME_WIDTH / 2, 82, 'KENNEY', {
-      fontSize: '28px',
-      color: '#ffe07c',
-      fontStyle: 'bold',
-      letterSpacing: 8,
-    }).setOrigin(0.5);
-
-    this.add.text(GAME_WIDTH / 2, 136, 'PLATFORMER', {
+    this.add.text(panelX, 100, 'PLATFORMER', {
       fontSize: '58px',
-      color: '#f8fbff',
+      color: '#2d5d7b',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    this.add.text(GAME_WIDTH / 2, 174, 'Bright stages, classic jumps, pure arcade energy.', {
-      fontSize: '18px',
-      color: '#21445d',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    createPanel(this, panelX, panelY, panelWidth, panelHeight);
 
-    createPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 26, 430, 250);
-
-    this.controlsVisible = false;
-    this.controlsText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 36, '', {
-      fontSize: '18px',
-      color: '#35586f',
-      align: 'center',
-      lineSpacing: 10,
-    }).setOrigin(0.5);
-
-    createTextButton(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 28, 'Start Run', () => {
-      playUiBlip(this);
-      startNewRun();
-      this.scene.start('GameScene', { levelIndex: 0 });
-    });
-
-    createTextButton(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 + 34, 'Controls', () => {
-      playUiBlip(this);
-      this.toggleControls();
-    });
-
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 52, 'ENTER starts the run. C toggles controls.', {
+    this.add.text(panelX, panelTop + 20, 'Bright stages, classic jumps, pure arcade energy.', {
       fontSize: '16px',
       color: '#21445d',
       fontStyle: 'bold',
-    }).setOrigin(0.5);
+      align: 'center',
+      wordWrap: { width: panelWidth - 88, useAdvancedWrap: true },
+      lineSpacing: 4,
+    }).setOrigin(0.5, 0);
+
+    this.add.rectangle(panelX, panelTop + 68, panelWidth - 96, 2, 0x6bc5ef, 0.72)
+      .setOrigin(0.5);
+
+    this.showingControls = false;
+    this.detailsTitle = this.add.text(panelX, panelTop + 80, '', {
+      fontSize: '15px',
+      color: '#2f7598',
+      fontStyle: 'bold',
+    }).setOrigin(0.5, 0);
+
+    this.detailsText = this.add.text(panelX, panelTop + 108, '', {
+      fontSize: '13px',
+      color: '#35586f',
+      align: 'center',
+      lineSpacing: 1,
+      wordWrap: { width: panelWidth - 112, useAdvancedWrap: true },
+    }).setOrigin(0.5, 0);
+
+    createTextButton(this, panelX - 96, panelBottom - 48, 'Start Run', () => {
+      playUiBlip(this);
+      startNewRun();
+      this.scene.start('GameScene', { levelIndex: 0 });
+    }, { width: 180, fontSize: '18px' });
+
+    this.detailsToggleButton = createTextButton(this, panelX + 96, panelBottom - 48, 'Controls', () => {
+      playUiBlip(this);
+      this.toggleControls();
+    }, { width: 180, fontSize: '18px' });
+
+    this.add.text(panelX, GAME_HEIGHT - 26, 'ENTER starts the run. C switches info and controls.', {
+      fontSize: '16px',
+      color: '#21445d',
+      fontStyle: 'bold',
+    }).setOrigin(0.5, 1);
 
     this.handleEnter = () => {
       playUiBlip(this);
@@ -72,7 +85,7 @@ export default class MainMenuScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-ENTER', this.handleEnter);
     this.input.keyboard.on('keydown-C', this.handleToggleControls);
 
-    this.toggleControls();
+    this.updateDetailsPanel();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.keyboard.off('keydown-C', this.handleToggleControls);
@@ -117,11 +130,31 @@ export default class MainMenuScene extends Phaser.Scene {
   }
 
   toggleControls() {
-    this.controlsVisible = !this.controlsVisible;
-    this.controlsText.setText(
-      this.controlsVisible
-        ? 'Move: WASD or Arrow Keys\nJump: SPACE\nShoot: F\nRoll: SHIFT\nPause: ESC'
-        : 'Three colorful stages. Survive with 3 lives.\nBuild score with fast defeats for combo multipliers.\nReach each flag to push deeper into the platform trail.'
-    );
+    this.showingControls = !this.showingControls;
+    this.updateDetailsPanel();
+  }
+
+  updateDetailsPanel() {
+    if (this.showingControls) {
+      this.detailsTitle.setText('Controls');
+      this.detailsText.setText([
+        'Move: WASD or Arrow Keys',
+        'Jump: SPACE',
+        'Shoot: F',
+        'Roll: SHIFT',
+        'Pause: ESC',
+      ].join('\n'));
+      this.detailsToggleButton.text.setText('Info');
+      return;
+    }
+
+    this.detailsTitle.setText('Game Info');
+    this.detailsText.setText([
+      'Three colorful stages.',
+      'Survive with 3 lives.',
+      'Chain quick defeats for combo score.',
+      'Reach each flag to go deeper.',
+    ].join('\n'));
+    this.detailsToggleButton.text.setText('Controls');
   }
 }

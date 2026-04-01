@@ -14,7 +14,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset(13, 34);
     this.body.setGravityY(PLAYER.GRAVITY);
     this.body.setCollideWorldBounds(false);
-    this.body.setMaxVelocityX(PLAYER.SPEED);
+    this.body.setMaxVelocityX(Math.max(PLAYER.SPEED, PLAYER.ROLL_SPEED, PLAYER.SPEED * 1.2));
 
     this.health = PLAYER.MAX_HEALTH;
     this.alive = true;
@@ -37,7 +37,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.normalBodySize = { w: 40, h: 58 };
     this.normalBodyOffset = { x: 13, y: 34 };
     this.crouchBodySize = { w: 40, h: 40 };
-    this.crouchBodyOffset = { x: 13, y: 52 };
+    this.crouchBodyOffset = { x: 15, y: 31 };
 
     this.cursors = scene.input.keyboard.createCursorKeys();
     this.wasd = scene.input.keyboard.addKeys({
@@ -118,6 +118,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    const rollDirection = left ? -1 : right ? 1 : (this.facingRight ? 1 : -1);
+
+    if (wantRoll && onGround) {
+      this.exitCrouch();
+      this.startRoll(rollDirection);
+      return;
+    }
+
     if (onGround && down && !left && !right) {
       this.enterCrouch();
       this.setVelocityX(0);
@@ -130,11 +138,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.exitCrouch();
-
-    if (wantRoll && onGround) {
-      this.startRoll();
-      return;
-    }
 
     const pushingWall = (touchingWallLeft && left) || (touchingWallRight && right);
     const bufferedJump = this.jumpBufferUntil >= now;
@@ -200,8 +203,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.isCrouching = true;
-    this.body.setSize(this.crouchBodySize.w, this.crouchBodySize.h);
-    this.body.setOffset(this.crouchBodyOffset.x, this.crouchBodyOffset.y);
+    this.applyCompactBody();
   }
 
   exitCrouch() {
@@ -210,8 +212,31 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.isCrouching = false;
+    this.applyNormalBody();
+  }
+
+  applyCompactBody() {
+    this.body.setSize(this.crouchBodySize.w, this.crouchBodySize.h);
+    this.body.setOffset(this.crouchBodyOffset.x, this.crouchBodyOffset.y);
+  }
+
+  applyNormalBody() {
     this.body.setSize(this.normalBodySize.w, this.normalBodySize.h);
     this.body.setOffset(this.normalBodyOffset.x, this.normalBodyOffset.y);
+  }
+
+  applyNormalBodyPreservingBottom() {
+    const previousBottom = this.body.bottom;
+
+    this.applyNormalBody();
+    this.body.updateFromGameObject();
+
+    const bottomDelta = previousBottom - this.body.bottom;
+
+    if (bottomDelta !== 0) {
+      this.setY(this.y + bottomDelta);
+      this.body.updateFromGameObject();
+    }
   }
 
   performJump(horizontalVelocity = null) {
@@ -253,13 +278,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     playShootSfx(this.scene);
   }
 
-  startRoll() {
+  startRoll(direction = this.facingRight ? 1 : -1) {
     this.isRolling = true;
     this.isInvincible = true;
-
-    const direction = this.facingRight ? 1 : -1;
+    this.facingRight = direction >= 0;
+    this.setFlipX(!this.facingRight);
 
     this.rollTimer?.remove(false);
+    this.applyCompactBody();
+    this.setVelocityY(0);
     this.setVelocityX(direction * PLAYER.ROLL_SPEED);
     this.anims.play('player_roll', true);
 
@@ -275,6 +302,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.rollTimer = this.scene.time.delayedCall(PLAYER.ROLL_DURATION, () => {
       this.isRolling = false;
       this.isInvincible = false;
+      this.applyNormalBodyPreservingBottom();
     });
   }
 
@@ -350,8 +378,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(0, 0);
     this.body.enable = true;
     this.body.setAllowGravity(true);
-    this.body.setSize(this.normalBodySize.w, this.normalBodySize.h);
-    this.body.setOffset(this.normalBodyOffset.x, this.normalBodyOffset.y);
+    this.applyNormalBody();
 
     this.health = PLAYER.MAX_HEALTH;
     this.alive = true;

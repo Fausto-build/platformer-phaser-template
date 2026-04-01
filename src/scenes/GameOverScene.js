@@ -17,21 +17,27 @@ export default class GameOverScene extends Phaser.Scene {
 
   create() {
     const run = getRunState();
+    const panelWidth = 520;
+    const panelHeight = 320;
+    const panelX = GAME_WIDTH / 2;
+    const panelY = GAME_HEIGHT / 2;
+    const panelTop = panelY - (panelHeight / 2);
+    const panelBottom = panelY + (panelHeight / 2);
 
     this.cameras.main.setBackgroundColor('#9cc8ea');
     this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_castle')
       .setDisplaySize(GAME_WIDTH + 80, GAME_HEIGHT + 20);
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0xfff1e7, 0.4)
       .setOrigin(0.5);
-    createPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, 520, 320);
+    createPanel(this, panelX, panelY, panelWidth, panelHeight);
 
-    this.add.text(GAME_WIDTH / 2, 92, 'Game Over', {
-      fontSize: '48px',
+    const titleText = this.add.text(panelX, panelTop + 14, 'Game Over', {
+      fontSize: '46px',
       color: '#d86d5b',
       fontStyle: 'bold',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5, 0);
 
-    this.add.text(GAME_WIDTH / 2, 188, [
+    this.add.text(panelX, titleText.y + titleText.height + 18, [
       `Final Score: ${formatScore(run.score)}`,
       `Total Defeats: ${run.totalDefeats}`,
       `Levels Cleared: ${run.levelResults.filter(Boolean).length}/${LEVELS.length}`,
@@ -40,16 +46,16 @@ export default class GameOverScene extends Phaser.Scene {
       fontSize: '22px',
       color: '#29465e',
       align: 'center',
-      lineSpacing: 12,
-    }).setOrigin(0.5);
+      lineSpacing: 10,
+    }).setOrigin(0.5, 0);
 
-    createTextButton(this, GAME_WIDTH / 2, 348, 'Restart Run', () => {
+    createTextButton(this, panelX, panelBottom - 78, 'Restart Run', () => {
       playUiBlip(this);
       startNewRun();
       this.scene.start('GameScene', { levelIndex: 0 });
     });
 
-    createTextButton(this, GAME_WIDTH / 2, 404, 'Main Menu', () => {
+    createTextButton(this, panelX, panelBottom - 24, 'Main Menu', () => {
       playUiBlip(this);
       this.scene.start('MainMenuScene');
     });

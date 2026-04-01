@@ -18,6 +18,12 @@ export default class LevelTransitionScene extends Phaser.Scene {
   create() {
     const canContinue = Number.isInteger(this.nextLevelIndex);
     const levelTheme = LEVELS[this.result.levelIndex]?.theme;
+    const panelWidth = 500;
+    const panelHeight = 300;
+    const panelX = GAME_WIDTH / 2;
+    const panelY = GAME_HEIGHT / 2;
+    const panelTop = panelY - (panelHeight / 2);
+    const panelBottom = panelY + (panelHeight / 2);
 
     this.cameras.main.setBackgroundColor('#b4e6ff');
     this.add.image(
@@ -29,21 +35,23 @@ export default class LevelTransitionScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0xf3fbff, 0.42)
       .setOrigin(0.5);
 
-    createPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, 500, 300);
+    createPanel(this, panelX, panelY, panelWidth, panelHeight);
 
-    this.add.text(GAME_WIDTH / 2, 104, `Level ${this.result.levelNumber} Clear`, {
-      fontSize: '36px',
+    const titleText = this.add.text(panelX, panelTop + 18, `Level ${this.result.levelNumber} Clear`, {
+      fontSize: '34px',
       color: '#2f9d68',
       fontStyle: 'bold',
-    }).setOrigin(0.5);
+      align: 'center',
+    }).setOrigin(0.5, 0);
 
-    this.add.text(GAME_WIDTH / 2, 154, this.result.levelName, {
+    const levelNameText = this.add.text(panelX, titleText.y + titleText.height + 18, this.result.levelName, {
       fontSize: '22px',
       color: '#29465e',
       fontStyle: 'bold',
-    }).setOrigin(0.5);
+      align: 'center',
+    }).setOrigin(0.5, 0);
 
-    this.add.text(GAME_WIDTH / 2, 214, [
+    this.add.text(panelX, levelNameText.y + levelNameText.height + 22, [
       `Defeats: ${this.result.defeats}`,
       `Time: ${formatDuration(this.result.timeMs)}`,
       `Time Bonus: ${formatScore(this.result.timeBonus)}`,
@@ -52,8 +60,8 @@ export default class LevelTransitionScene extends Phaser.Scene {
       fontSize: '20px',
       color: '#35586f',
       align: 'center',
-      lineSpacing: 12,
-    }).setOrigin(0.5);
+      lineSpacing: 10,
+    }).setOrigin(0.5, 0);
 
     const buttonLabel = canContinue ? 'Continue' : 'View Victory';
     const advance = () => {
@@ -65,7 +73,7 @@ export default class LevelTransitionScene extends Phaser.Scene {
       }
     };
 
-    createTextButton(this, GAME_WIDTH / 2, 372, buttonLabel, advance);
+    createTextButton(this, panelX, panelBottom - 32, buttonLabel, advance);
     this.handleAdvance = advance;
     this.input.keyboard.once('keydown-ENTER', this.handleAdvance);
 
